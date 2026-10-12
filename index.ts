@@ -38,6 +38,8 @@ import datosDomiciliariosRoutes from './src/datosDomiciliarios/infrastructure/ht
 import datosLaboralesRoutes from './src/datosLaborales/infrastructure/http/routes/datosLaboralesRoutes';
 import fileRoutes from './src/files/infrastructure/http/router/fileRoutes';
 import automaticEventsRouter from './src/automaticEvents/infrastructure/http/router/automaticEvents.router';
+import { perfilesRouter } from './src/perfiles/infrastructure/http/router/PerfilesRouter';
+import { permitir, SOLO_ADMIN, ADMIN_Y_VINCULACION, TODOS_INTERNOS } from './src/core/middleware/permisos';
 
 
 const app = express();
@@ -45,7 +47,7 @@ const port = process.env.PORT || 3000;
 
 async function startServer() {
     await testConnection();
-    
+
     // Middlewares
     app.use(cors({
         origin: true,
@@ -86,10 +88,10 @@ async function startServer() {
     app.use('/img', express.static(path.join(process.cwd(), 'img')));
 
     // Rutas
-    app.use('/api/tipo-pregunta', typeQuestionRoutes);
-    app.use('/api/pregunta', questionRoutes);
-    app.use('/api/opcion-pregunta', opcionPreguntaRoutes);
-    app.use('/api/formulario', formRoutes);
+    app.use('/api/tipo-pregunta', permitir({ lectura: TODOS_INTERNOS }), typeQuestionRoutes);
+    app.use('/api/pregunta', permitir({ lectura: TODOS_INTERNOS }), questionRoutes);
+    app.use('/api/opcion-pregunta', permitir({ lectura: TODOS_INTERNOS }), opcionPreguntaRoutes);
+    app.use('/api/formulario', permitir({ lectura: TODOS_INTERNOS }), formRoutes);
     app.use('/api/respuesta', respuestaRoutes);
 
     app.use('/api/egresado/logros-laborales', laborAchievementRoutes);
@@ -99,23 +101,29 @@ async function startServer() {
     app.use('/api/datos-domiciliarios', datosDomiciliariosRoutes);
     app.use('/api/datos-laborales', datosLaboralesRoutes);
     app.use('/api/files', fileRoutes);
-    app.use('/api/grupo', groupRoutes)
+    app.use('/api/grupo', permitir({ lectura: TODOS_INTERNOS }), groupRoutes)
     app.use('/api/auth', authRoutes);
     app.use('/api/admin/usuarios-internos', createUsuariosInternosRoutes());
+    app.use('/api/profiles', perfilesRouter);
+    app.use('/api/grupos', permitir({ lectura: TODOS_INTERNOS })); // importar miembros a un grupo
+    app.get('/api/egresados', permitir({ lectura: TODOS_INTERNOS })); // listado de egresados
     app.use('/api', importarMiembrosRoutes);
     app.use('/api', suscripcionRoutes);
 
+    app.use('/api/tipo-correo', permitir({ lectura: TODOS_INTERNOS, escritura: ADMIN_Y_VINCULACION }));
     app.use('/api', tipoCorreoRoutes);
-    app.use('/api/templates-correo', emailTemplateRouter);
+    app.use('/api/templates-correo', permitir({ lectura: TODOS_INTERNOS, escritura: ADMIN_Y_VINCULACION }), emailTemplateRouter);
 
-    app.use('/api/encuestas', Survey);   
+    app.use('/api/encuestas', permitir({ lectura: TODOS_INTERNOS, rutasPublicas: [/^\/(publico|responder)\/[^/]+\/?$/] }), Survey);
     app.use('/api/encuestas/:id', assignmentRouter);
 
+    app.use('/mailing/accounts', permitir({ lectura: SOLO_ADMIN }));
+    app.use('/mailing/clients', permitir({ lectura: SOLO_ADMIN }));
     app.use('/mailing', mailingAccountRouter);
     app.use('/mailing', mailingClientRouter);
     app.use('/mailing', mailingSenderRouter);
-    app.use('/distribution', distributionRouter);
-    app.use('/analytics', analyticsRouter);
+    app.use('/distribution', permitir({ lectura: TODOS_INTERNOS }), distributionRouter);
+    app.use('/analytics', permitir({ lectura: TODOS_INTERNOS }), analyticsRouter);
     app.use('/api/automatic-events', automaticEventsRouter);
 
     scheduleBirthdayDispatchJob(dispatchBirthdayCongratsUseCase);
@@ -127,7 +135,7 @@ async function startServer() {
     });
 
     app.use("/docs", swaggerUi.serve, swaggerUiSetup);
-    
+
     // Manejo de errores (debe ir al final)
     app.use(errorHandler);
 

@@ -74,7 +74,7 @@ export function createUsuariosInternosRoutes(): Router {
   router.post(
     '/',
     requireAuth,
-    requireRoles(['super_admin']),
+    requireRoles(['super_admin', 'director_vinculacion']),
     (req, res) => createController.handle(req, res)
   );
 
@@ -121,7 +121,7 @@ export function createUsuariosInternosRoutes(): Router {
   router.get(
     '/',
     requireAuth,
-    requireRoles(['super_admin']),
+    requireRoles(['super_admin', 'director_vinculacion']),
     (req, res) => getController.handle(req, res)
   );
 
@@ -159,7 +159,7 @@ export function createUsuariosInternosRoutes(): Router {
   router.get(
     '/roles',
     requireAuth,
-    requireRoles(['super_admin']),
+    requireRoles(['super_admin', 'director_vinculacion']),
     (req, res) => getRolesController.handle(req, res)
   );
 
@@ -196,7 +196,7 @@ export function createUsuariosInternosRoutes(): Router {
   router.get(
     '/:id',
     requireAuth,
-    requireRoles(['super_admin']),
+    requireRoles(['super_admin', 'director_vinculacion']),
     (req, res) => getByIdController.handle(req, res)
   );
 
@@ -237,7 +237,7 @@ export function createUsuariosInternosRoutes(): Router {
   router.patch(
     '/:id',
     requireAuth,
-    requireRoles(['super_admin']),
+    requireRoles(['super_admin', 'director_vinculacion']),
     (req, res) => updateController.handle(req, res)
   );
 
@@ -269,7 +269,7 @@ export function createUsuariosInternosRoutes(): Router {
   router.patch(
     '/:id/reset-password',
     requireAuth,
-    requireRoles(['super_admin']),
+    requireRoles(['super_admin', 'director_vinculacion']),
     (req, res) => resetController.handle(req, res)
   );
 
@@ -295,7 +295,7 @@ export function createUsuariosInternosRoutes(): Router {
   router.patch(
     '/:id/deactivate',
     requireAuth,
-    requireRoles(['super_admin']),
+    requireRoles(['super_admin', 'director_vinculacion']),
     (req, res) => deactivateController.handle(req, res)
   );
 

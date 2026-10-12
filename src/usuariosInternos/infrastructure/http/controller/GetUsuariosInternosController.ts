@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { GetUsuariosInternos } from '../../../application/usecase/GetUsuariosInternos';
 
 export class GetUsuariosInternosController {
-  constructor(private readonly getUsuariosInternos: GetUsuariosInternos) {}
+  constructor(private readonly getUsuariosInternos: GetUsuariosInternos) { }
 
   async handle(req: Request, res: Response): Promise<void> {
     try {
@@ -13,7 +13,8 @@ export class GetUsuariosInternosController {
       if (is_active !== undefined) filters.is_active = is_active === 'true';
       if (search) filters.search = search as string;
 
-      const result = await this.getUsuariosInternos.execute(filters);
+      const actorRol = req.session?.user?.rol ?? '';
+      const result = await this.getUsuariosInternos.execute(filters, actorRol);
 
       if (!result.success) {
         res.status(400).json(result);

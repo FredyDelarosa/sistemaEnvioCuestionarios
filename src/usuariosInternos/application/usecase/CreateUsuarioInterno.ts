@@ -1,17 +1,28 @@
 import { IUsuariosInternosRepository } from '../../domain/port/IUsuariosInternosRepository';
 import { InternalUser, CreateInternalUserInput } from '../../domain/model/InternalUser';
+import { puedeAdministrarRol, MENSAJE_SIN_PERMISO } from '../../domain/policy/PoliticaGestionUsuarios';
 
 export interface CreateUsuarioInternoResult {
   success: boolean;
   data?: InternalUser;
   error?: string;
+  forbidden?: boolean;
 }
 
 export class CreateUsuarioInterno {
-  constructor(private readonly repository: IUsuariosInternosRepository) {}
+  constructor(private readonly repository: IUsuariosInternosRepository) { }
 
-  async execute(input: CreateInternalUserInput): Promise<CreateUsuarioInternoResult> {
+  async execute(
+    input: CreateInternalUserInput,
+    actorRol: string
+  ): Promise<CreateUsuarioInternoResult> {
     try {
+      const roles = await this.repository.getRoles();
+      const rolDestino = roles.find((r) => r.id_rol === Number(input.id_rol));
+      if (rolDestino && !puedeAdministrarRol(actorRol, rolDestino.nombre)) {
+        return { success: false, error: MENSAJE_SIN_PERMISO, forbidden: true };
+      }
+
       this.validatePassword(input.password);
 
       const { id_usuario } = await this.repository.createUser(input);

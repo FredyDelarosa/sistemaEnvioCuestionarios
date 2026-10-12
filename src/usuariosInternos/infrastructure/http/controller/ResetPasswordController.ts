@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { ResetPasswordUsuarioInterno } from '../../../application/usecase/ResetPasswordUsuarioInterno';
 
 export class ResetPasswordController {
-  constructor(private readonly resetPassword: ResetPasswordUsuarioInterno) {}
+  constructor(private readonly resetPassword: ResetPasswordUsuarioInterno) { }
 
   async handle(req: Request, res: Response): Promise<void> {
     try {
@@ -27,10 +27,11 @@ export class ResetPasswordController {
         return;
       }
 
-      const result = await this.resetPassword.execute(id_usuario, new_password);
+      const actorRol = req.session?.user?.rol ?? '';
+      const result = await this.resetPassword.execute(id_usuario, new_password, actorRol);
 
       if (!result.success) {
-        res.status(400).json(result);
+        res.status(result.forbidden ? 403 : 400).json({ success: false, error: result.error });
         return;
       }
 

@@ -2,11 +2,12 @@ import { Request, Response } from 'express';
 import { GetRolesUsuariosInternos } from '../../../application/usecase/GetRolesUsuariosInternos';
 
 export class GetRolesUsuariosInternosController {
-  constructor(private readonly getRolesUsuariosInternos: GetRolesUsuariosInternos) {}
+  constructor(private readonly getRolesUsuariosInternos: GetRolesUsuariosInternos) { }
 
-  async handle(_req: Request, res: Response): Promise<void> {
+  async handle(req: Request, res: Response): Promise<void> {
     try {
-      const result = await this.getRolesUsuariosInternos.execute();
+      const actorRol = req.session?.user?.rol ?? '';
+      const result = await this.getRolesUsuariosInternos.execute(actorRol);
 
       if (!result.success) {
         res.status(400).json(result);
