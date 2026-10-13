@@ -9,7 +9,7 @@ const getPerfilByIdController = new GetPerfilByIdController(getPerfilByIdUsecase
 
 export const perfilesRouter = Router();
 
-perfilesRouter.use(requireRoles(['super_admin']));
+perfilesRouter.use(requireRoles(['admin']));
 
 perfilesRouter.get('/', (req, res) => getPerfilesController.handle(req, res));
 perfilesRouter.get('/:id', (req, res) => getPerfilByIdController.handle(req, res));

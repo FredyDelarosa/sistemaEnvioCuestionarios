@@ -4,7 +4,7 @@ import { requireAuth, requireRoles } from '../../../../core/middleware/authoriza
 
 const router = Router();
 
-router.use(requireAuth, requireRoles(['super_admin', 'director_programa_educativo', 'director_vinculacion']));
+router.use(requireAuth, requireRoles(['admin', 'director_programa_educativo', 'director_vinculacion']));
 
 /**
  * @openapi

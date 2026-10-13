@@ -4,10 +4,10 @@ import { SessionRole } from '../../auth/domain/model/session';
 type RolInterno = Exclude<SessionRole, 'egresado'>;
 
 // Grupos de roles usados en la matriz de perfiles y funcionalidades.
-export const SOLO_ADMIN: RolInterno[] = ['super_admin'];
-export const ADMIN_Y_VINCULACION: RolInterno[] = ['super_admin', 'director_vinculacion'];
+export const SOLO_ADMIN: RolInterno[] = ['admin'];
+export const ADMIN_Y_VINCULACION: RolInterno[] = ['admin', 'director_vinculacion'];
 export const TODOS_INTERNOS: RolInterno[] = [
-    'super_admin',
+    'admin',
     'director_vinculacion',
     'director_programa_educativo',
 ];

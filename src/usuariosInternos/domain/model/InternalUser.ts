@@ -1,4 +1,4 @@
-export type SessionRole = 'super_admin' | 'director_vinculacion' | 'director_programa_educativo';
+export type SessionRole = 'admin' | 'director_vinculacion' | 'director_programa_educativo';
 
 export interface InternalUser {
   id_usuario: number;

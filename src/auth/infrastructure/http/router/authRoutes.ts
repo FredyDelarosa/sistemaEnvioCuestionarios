@@ -88,14 +88,14 @@ const router = Router();
  *               properties:
  *                 nombre:
  *                   type: string
- *                   example: "super admin"
+ *                   example: "admin"
  *                 email:
  *                   type: string
  *                   example: "233317@ids.upchiapas.edu.mx"
  *                 rol:
  *                   type: string
- *                   enum: [super_admin, director_vinculacion, director_programa_educativo]
- *                   example: "super_admin"
+ *                   enum: [admin, director_vinculacion, director_programa_educativo]
+ *                   example: "admin"
  *                 mensaje:
  *                   type: string
  *                   example: "Sesión iniciada correctamente"
@@ -154,7 +154,7 @@ const router = Router();
  *
  * /api/auth/staff/login:
  *   post:
- *     summary: Iniciar sesión de usuario interno (super-admin/directores)
+ *     summary: Iniciar sesión de usuario interno (admin/directores)
  *     tags: [Auth, Admin]
  *     requestBody:
  *       required: true

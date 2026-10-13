@@ -646,7 +646,7 @@ const options: swaggerJsdoc.Options = {
             nombre: { type: "string", example: "Juan Pérez" },
             email: { type: "string", format: "email", example: "juan.perez@ejemplo.com" },
             id_rol: { type: "number", example: 2 },
-            rol_nombre: { type: "string", enum: ["super_admin", "director_vinculacion", "director_programa_educativo"], example: "director_vinculacion" },
+            rol_nombre: { type: "string", enum: ["admin", "director_vinculacion", "director_programa_educativo"], example: "director_vinculacion" },
             is_active: { type: "boolean", example: true },
             created_at: { type: "string", format: "date-time", example: "2026-02-22T10:30:00Z" },
             updated_at: { type: "string", format: "date-time", example: "2026-02-22T10:30:00Z" }
