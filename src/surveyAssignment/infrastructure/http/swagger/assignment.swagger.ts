@@ -136,7 +136,7 @@
  *   post:
  *     summary: Asigna egresados a una encuesta (individual, múltiple o por grupo)
  *     description: |
- *       Asigna acceso a una encuesta a uno o varios egresados, o a todos los miembros de un grupo. Si un egresado ya tenía acceso y estaba revocado, se reactiva. Si ya estaba activo, se omite.
+ *       Asigna acceso a una encuesta a uno o varios egresados, o a todos los miembros de un grupo. Si un egresado fue quitado manualmente de la encuesta, no se reactiva al asignar por grupo; solo vuelve si se asigna de forma individual. Si ya estaba activo, se omite.
  *       
  *       **Instrucciones:**
  *       - Para asignar egresados individuales, envía un array en `lista_egresados`.
@@ -203,7 +203,7 @@
  *       Devuelve la lista paginada de egresados asignados a la encuesta, con su estado de acceso y respuesta.
  *       
  *       **Instrucciones:**
- *       - Puedes filtrar por acceso (activos, revocados, todos), estado de respuesta (pendiente, contestada) y búsqueda por nombre/matrícula/email.
+ *       - Puedes filtrar por acceso (activos, revocados, todos; por defecto activos), estado de respuesta (pendiente, contestada) y búsqueda por nombre/matrícula/email.
  *       - Usa los parámetros `page` y `limit` para paginación.
  *       - El campo `meta` indica el total de resultados y la página actual.
  *     tags:
@@ -325,7 +325,7 @@
  *       Revoca el acceso de un egresado a la encuesta. El uuid es el identificador único de la asignación (no del egresado).
  *       
  *       **Instrucciones:**
- *       - El acceso revocado no elimina el registro, solo lo marca como inactivo.
+ *       - El acceso revocado no elimina el registro, solo lo marca como inactivo y como quitado manualmente, por lo que no vuelve al asignar un grupo.
  *       - Si el uuid no existe o ya está revocado, la operación es idempotente.
  *     tags:
  *       - SurveyAssignment

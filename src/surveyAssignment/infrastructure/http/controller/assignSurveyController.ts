@@ -1,3 +1,4 @@
+
 import { Request, Response, NextFunction } from 'express';
 import { AssignSurvey } from '../../../application/usecase/AssignSurvey';
 // import { errorHandler } from '../../../../core/middleware/errorHandler';
@@ -24,7 +25,11 @@ export const assignSurveyController = (assignSurvey: AssignSurvey) => async (req
       const { assignmentDependencies } = require('../../dependencies');
       const assignSurveyGroup = assignmentDependencies.assignSurveyGroup;
       const idGroup = Number(data.attributes.id_group);
-      const result = await assignSurveyGroup.execute(idEncuesta, idGroup);
+      const modo = data.attributes.modo ?? 'sumar';
+      if (modo !== 'sumar' && modo !== 'reemplazar') {
+        return res.status(400).json({ error: { status: '400', title: 'Bad Request', detail: "modo debe ser 'sumar' o 'reemplazar'" } });
+      }
+      const result = await assignSurveyGroup.execute(idEncuesta, idGroup, modo);
       return res.status(200).json({ meta: result });
     } else {
       return res.status(400).json({ error: { status: '400', title: 'Bad Request', detail: 'Debes enviar lista_egresados o id_group' } });

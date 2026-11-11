@@ -10,7 +10,11 @@ export const assignSurveyGroupController = (assignSurveyGroup: AssignSurveyGroup
       return res.status(400).json({ error: { status: '400', title: 'Bad Request', detail: 'Debes enviar id_group en attributes' } });
     }
     const idGroup = Number(data.attributes.id_group);
-    const result = await assignSurveyGroup.execute(idEncuesta, idGroup);
+    const modo = data.attributes.modo ?? 'sumar'; // B5
+    if (modo !== 'sumar' && modo !== 'reemplazar') { // B5
+      return res.status(400).json({ error: { status: '400', title: 'Bad Request', detail: "modo debe ser 'sumar' o 'reemplazar'" } }); // B5
+    } // B5
+    const result = await assignSurveyGroup.execute(idEncuesta, idGroup, modo); // B5
     res.status(200).json({ meta: result });
   } catch (error) {
     next(error);

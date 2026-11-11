@@ -14,7 +14,7 @@ export async function listParticipantsQuery(
   let where = 'ee.id_encuesta = ?';
   const params: any[] = [idEncuesta];
 
-  if (options.filtro_acceso === 'activos') {
+  if ((options.filtro_acceso ?? 'activos') === 'activos') {
     where += ' AND ee.is_active = 1';
   } else if (options.filtro_acceso === 'revocados') {
     where += ' AND ee.is_active = 0';

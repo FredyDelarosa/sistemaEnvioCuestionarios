@@ -2,7 +2,8 @@
 export interface AssignmentRepository {
   assignToGraduates(
     idEncuesta: number,
-    egresados: number[]
+    egresados: number[],
+    opciones?: { porGrupo?: boolean }
   ): Promise<{ created: number; reactivated: number; skipped: number }>;
 
   deactivateAllAssignmentsForSurvey(idEncuesta: number): Promise<void>;

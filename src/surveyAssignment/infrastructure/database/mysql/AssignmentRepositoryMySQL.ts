@@ -4,42 +4,58 @@ import { v4 as uuidv4 } from 'uuid';
 import { listParticipantsQuery } from './AssignmentRepositoryMySQL.participants';
 
 export class AssignmentRepositoryMySQL extends BaseAssignmentRepository {
-  async assignToGraduates(idEncuesta: number, egresados: number[]): Promise<{ created: number; reactivated: number; skipped: number }> {
+  async assignToGraduates(
+    idEncuesta: number,
+    egresados: number[],
+    opciones: { porGrupo?: boolean } = {}
+  ): Promise<{ created: number; reactivated: number; skipped: number }> {
     if (!egresados.length) return { created: 0, reactivated: 0, skipped: 0 };
 
     // 1. Consultar los egresados ya asignados a la encuesta
     const [rows]: any = await MysqlConnection.query(
-      `SELECT id_egresado, is_active FROM encuesta_egresados WHERE id_encuesta = ? AND id_egresado IN (${egresados.map(() => '?').join(',')})`,
+      `SELECT id_egresado, is_active, revocado_manual FROM encuesta_egresados WHERE id_encuesta = ? AND id_egresado IN (${egresados.map(() => '?').join(',')})`,
       [idEncuesta, ...egresados]
     );
-    const yaAsignados = new Map<number, boolean>();
+    const yaAsignados = new Map<number, { activo: boolean; revocadoManual: boolean }>();
     for (const row of rows) {
-      yaAsignados.set(row.id_egresado, !!row.is_active);
+      yaAsignados.set(row.id_egresado, {
+        activo: !!row.is_active,
+        revocadoManual: !!row.revocado_manual
+      });
     }
 
     let created = 0, reactivated = 0, skipped = 0;
-    const inserts: string[] = [];
+    const inserts: number[] = [];
     const updates: number[] = [];
     for (const idEgresado of egresados) {
-      if (!yaAsignados.has(idEgresado)) {
-        inserts.push(`('${uuidv4()}', 1, ${idEncuesta}, ${idEgresado})`);
+      const actual = yaAsignados.get(idEgresado);
+      if (!actual) {
+        inserts.push(idEgresado);
         created++;
-      } else if (!yaAsignados.get(idEgresado)) {
+      } else if (actual.activo) {
+        skipped++;
+      } else if (actual.revocadoManual && opciones.porGrupo) {
+        // Lo quitó un administrador a mano: al asignar por grupo no vuelve
+        skipped++;
+      } else {
         updates.push(idEgresado);
         reactivated++;
-      } else {
-        skipped++;
       }
     }
 
     // 2. Insertar nuevos
     if (inserts.length) {
-      const sql = `INSERT INTO encuesta_egresados (id_encuesta_egresados, is_active, id_encuesta, id_egresado) VALUES ${inserts.join(', ')}`;
-      await MysqlConnection.query(sql);
+      const placeholders = inserts.map(() => '(?, 1, ?, ?)').join(', ');
+      const params: Array<string | number> = [];
+      for (const idEgresado of inserts) {
+        params.push(uuidv4(), idEncuesta, idEgresado);
+      }
+      const sql = `INSERT INTO encuesta_egresados (id_encuesta_egresados, is_active, id_encuesta, id_egresado) VALUES ${placeholders}`;
+      await MysqlConnection.query(sql, params);
     }
-    // 3. Reactivar los revocados
+    // 3. Reactivar los revocados (y quitarles la marca de "quitado a mano")
     if (updates.length) {
-      const sql = `UPDATE encuesta_egresados SET is_active = 1 WHERE id_encuesta = ? AND id_egresado IN (${updates.map(() => '?').join(',')})`;
+      const sql = `UPDATE encuesta_egresados SET is_active = 1, revocado_manual = 0 WHERE id_encuesta = ? AND id_egresado IN (${updates.map(() => '?').join(',')})`;
       await MysqlConnection.query(sql, [idEncuesta, ...updates]);
     }
 
@@ -58,7 +74,10 @@ export class AssignmentRepositoryMySQL extends BaseAssignmentRepository {
   }
 
   async revokeAccess(uuid: string): Promise<void> {
-    await MysqlConnection.query('UPDATE encuesta_egresados SET is_active = 0 WHERE id_encuesta_egresados = ?', [uuid]);
+    await MysqlConnection.query(
+      'UPDATE encuesta_egresados SET is_active = 0, revocado_manual = 1 WHERE id_encuesta_egresados = ?',
+      [uuid]
+    );
   }
 
   async getGroupsAssignedToSurvey(idEncuesta: number): Promise<any[]> {
