@@ -31,7 +31,7 @@ export class AssignSurveyGroup {
     const egresados = rows.map(r => r.id_egresado);
     if (!egresados.length) return { created: 0, reactivated: 0, skipped: 0, removed };
 
-    const result = await this.assignmentRepo.assignToGraduates(idEncuesta, egresados, { porGrupo: true });
+    const result = await this.assignmentRepo.assignToGraduates(idEncuesta, egresados, { porGrupo: true, idGrupo: idGroup });
     return { ...result, removed };
   }
 }
