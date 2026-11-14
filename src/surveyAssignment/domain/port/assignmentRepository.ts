@@ -21,5 +21,7 @@ export interface AssignmentRepository {
 
   revokeAccess(uuid: string): Promise<void>;
 
+  revokeAllForSurvey(idEncuesta: number): Promise<number>;
+
   getGroupsAssignedToSurvey(idEncuesta: number): Promise<any[]>;
 }

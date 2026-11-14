@@ -80,6 +80,18 @@ export class AssignmentRepositoryMySQL extends BaseAssignmentRepository {
     );
   }
 
+  async revokeAllForSurvey(idEncuesta: number): Promise<number> {
+    const [rows]: [any[], any] = await MysqlConnection.query(
+      'SELECT COUNT(*) AS total FROM encuesta_egresados WHERE id_encuesta = ? AND is_active = 1',
+      [idEncuesta]
+    );
+    await MysqlConnection.query(
+      'UPDATE encuesta_egresados SET is_active = 0, revocado_manual = 1 WHERE id_encuesta = ?',
+      [idEncuesta]
+    );
+    return Number(rows[0]?.total ?? 0);
+  }
+
   async getGroupsAssignedToSurvey(idEncuesta: number): Promise<any[]> {
     const sql = `
       SELECT DISTINCT

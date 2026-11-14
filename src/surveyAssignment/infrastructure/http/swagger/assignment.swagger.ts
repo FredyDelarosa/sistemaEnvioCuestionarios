@@ -255,6 +255,31 @@
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/SurveyAssignmentListResponse'
+ *   delete:
+ *     summary: Quita a todos los participantes de la encuesta
+ *     description: |
+ *       Desactiva a todos los egresados asignados a la encuesta en una sola operación.
+ *
+ *       **Instrucciones:**
+ *       - No borra registros ni respuestas guardadas; solo marca las asignaciones como inactivas y como quitadas manualmente, por lo que no vuelven al asignar un grupo.
+ *       - Devuelve cuántos participantes activos se quitaron.
+ *     tags:
+ *       - SurveyAssignment
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Participantes quitados correctamente.
+ *         content:
+ *           application/json:
+ *             example: { data: { type: revocacion, attributes: { id_encuesta: 1, revocados: 25 } } }
+ *       400:
+ *         description: Bad Request. El id de la encuesta no es válido.
  *
  * /api/encuestas/{id}/grupos:
  *   get:

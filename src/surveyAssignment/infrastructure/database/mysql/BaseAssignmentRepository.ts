@@ -13,6 +13,9 @@ export abstract class BaseAssignmentRepository implements AssignmentRepository {
   revokeAccess(_uuid: string): Promise<void> {
     return Promise.reject(new Error('Method not implemented'));
   }
+  revokeAllForSurvey(_idEncuesta: number): Promise<number> {
+    return Promise.reject(new Error('Method not implemented'));
+  }
   getGroupsAssignedToSurvey(_idEncuesta: number): Promise<any[]> {
     return Promise.reject(new Error('Method not implemented'));
   }
