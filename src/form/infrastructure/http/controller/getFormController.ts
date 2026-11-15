@@ -45,6 +45,38 @@ export const getFormulariosController = (
       return;
     }
 
+    // B11: si se pide filtro, búsqueda o página, se usa la búsqueda paginada.
+    // Sin parámetros, la respuesta es la misma de siempre.
+    const { activo, q, page, limit } = req.query;
+    if (activo !== undefined || q !== undefined || page !== undefined) {
+      if (activo !== undefined && activo !== 'true' && activo !== 'false') {
+        res.status(400).json({ error: { status: '400', title: 'Bad Request', detail: "activo debe ser 'true' o 'false'" }});
+        return;
+      }
+      const pagina = Math.max(1, Number(page) || 1);
+      const porPagina = Math.min(100, Math.max(1, Number(limit) || 20));
+      const resultado = await getAllFormularios.search({
+        activo: activo === undefined ? undefined : activo === 'true',
+        q: typeof q === 'string' && q.trim() ? q.trim() : undefined,
+        page: pagina,
+        limit: porPagina
+      });
+      res.status(200).json({
+        meta: { total_records: resultado.total, page: pagina, limit: porPagina },
+        data: resultado.data.map(f => ({
+          type: 'formularios',
+          id: f.id_formulario?.toString(),
+          attributes: {
+            titulo: f.titulo,
+            descripcion: f.descripcion,
+            is_active: f.is_active,
+            fecha_creacion: f.fecha_creacion
+          }
+        }))
+      });
+      return;
+    }
+
     const all = await getAllFormularios.execute();
     res.status(200).json({
       data: all.map(f => ({

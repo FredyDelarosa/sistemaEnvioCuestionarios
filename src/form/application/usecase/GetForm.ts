@@ -1,4 +1,4 @@
-import { FormularioRepository } from '../../domain/port/formRepository';
+import { FormularioRepository, BusquedaFormularios } from '../../domain/port/formRepository';
 import { Formulario } from '../../domain/model/form';
 
 export class GetFormularioById {
@@ -17,5 +17,10 @@ export class GetAllFormularios {
 
   async execute(): Promise<Formulario[]> {
     return await this.repo.findAll();
+  }
+
+  // B11: activos, búsqueda por título y paginación
+  async search(opciones: BusquedaFormularios): Promise<{ data: Formulario[]; total: number }> {
+    return await this.repo.search(opciones);
   }
 }

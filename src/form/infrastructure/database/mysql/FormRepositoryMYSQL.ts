@@ -1,6 +1,7 @@
 import { MysqlConnection } from '../../../../core/db/mysl/connection';
-import { FormularioRepository } from '../../../domain/port/formRepository';
+import { FormularioRepository, BusquedaFormularios } from '../../../domain/port/formRepository';
 import { Formulario } from '../../../domain/model/form';
+import { searchFormulariosQuery } from './FormRepositoryMYSQL.search';
 
 export class FormularioRepositoryMySQL implements FormularioRepository {
   async getQuestionsWithOptionsByFormId(formularioId: number): Promise<any[]> {
@@ -97,6 +98,11 @@ export class FormularioRepositoryMySQL implements FormularioRepository {
       `SELECT * FROM formulario ORDER BY id_formulario ASC`
     );
     return rows;
+  }
+
+  // B11: activos, búsqueda por título y paginación
+  async search(opciones: BusquedaFormularios): Promise<{ data: Formulario[]; total: number }> {
+    return searchFormulariosQuery(opciones);
   }
 
   async findActiveByTitle(title: string): Promise<Formulario | null> {
