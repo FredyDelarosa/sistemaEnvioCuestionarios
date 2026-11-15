@@ -643,6 +643,7 @@ DROP TABLE IF EXISTS `sys_email_account`;
 CREATE TABLE `sys_email_account` (
   `id_account` int NOT NULL AUTO_INCREMENT,
   `email` varchar(150) NOT NULL,
+  `display_name` varchar(150) DEFAULT NULL,
   `host` varchar(100) DEFAULT 'smtp.gmail.com',
   `port` int DEFAULT '587',
   `password_encrypted` varchar(255) NOT NULL,
