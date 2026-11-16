@@ -5,6 +5,7 @@ export interface SMTPConfig {
   port: number;
   user: string;
   pass: string;
+  fromName?: string; // B13: nombre que se muestra como remitente
 }
 
 export interface MailerService {

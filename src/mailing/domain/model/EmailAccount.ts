@@ -1,6 +1,7 @@
 export interface EmailAccount {
   id_account: number;
   email: string;
+  display_name?: string | null;
   host: string;
   port: number;
   daily_limit: number;
