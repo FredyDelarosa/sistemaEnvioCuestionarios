@@ -5,7 +5,7 @@ export const revokeAllSurveyAccessController = (revokeAllSurveyAccess: RevokeAll
   try {
     const idEncuesta = Number(req.params.id);
     if (!Number.isInteger(idEncuesta) || idEncuesta <= 0) {
-      res.status(400).json({ message: 'El id de la encuesta no es válido' });
+      res.status(400).json({ error: { status: '400', title: 'Bad Request', detail: 'El id de la encuesta no es válido' } });
       return;
     }
     const revocados = await revokeAllSurveyAccess.execute(idEncuesta);
