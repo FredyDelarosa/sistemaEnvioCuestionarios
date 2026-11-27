@@ -1,7 +1,14 @@
-import { Formulario } from '../model/form';
+import { Formulario, FormularioCompleto, TipoPreguntaRef } from '../model/form';
 
 export interface FormularioRepository {
   create(data: Omit<Formulario, 'id_formulario' | 'fecha_creacion'>): Promise<Formulario>;
+
+  // Fix B1: crea el formulario con todas sus preguntas y opciones en una sola
+  // transacción (si algo falla, no queda nada a medias) y asigna el orden.
+  createComplete(data: FormularioCompleto): Promise<Formulario>;
+
+  // Catálogo de tipos de pregunta (para validar cuáles requieren opciones).
+  findTiposPregunta(): Promise<TipoPreguntaRef[]>;
   update(id: number, data: Partial<Formulario>): Promise<Formulario>;
   delete(id: number): Promise<void>;
   findById(id: number): Promise<Formulario | null>;
@@ -21,6 +28,8 @@ export interface FormularioRepository {
 
   // Comprobaciones adicionales
   formHasEncuestaActive(formularioId: number): Promise<boolean>;
+  formHasEncuesta(formularioId: number): Promise<boolean>;
+  formHasRespuesta(formularioId: number): Promise<boolean>;
   preguntaExists(preguntaId: number): Promise<boolean>;
 
   getQuestionsWithOptionsByFormId(formularioId: number): Promise<any[]>;

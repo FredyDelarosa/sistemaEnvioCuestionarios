@@ -1,6 +1,6 @@
 import { MysqlConnection } from '../../../../core/db/mysl/connection';
 import { FormularioRepository } from '../../../domain/port/formRepository';
-import { Formulario } from '../../../domain/model/form';
+import { Formulario, FormularioCompleto, TipoPreguntaRef } from '../../../domain/model/form';
 
 export class FormularioRepositoryMySQL implements FormularioRepository {
   async getQuestionsWithOptionsByFormId(formularioId: number): Promise<any[]> {
@@ -61,6 +61,68 @@ export class FormularioRepositoryMySQL implements FormularioRepository {
     return rows[0];
   }
 
+  // Fix B1: crea el formulario, sus preguntas, sus opciones y las asociaciones
+  // dentro de una sola transacción. El orden lo asigna el servidor (1..N según
+  // la posición de la pregunta). Si cualquier paso falla, se revierte todo y no
+  // quedan filas a medias.
+  async createComplete(data: FormularioCompleto): Promise<Formulario> {
+    const conn = await MysqlConnection.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      const [formResult]: any = await conn.execute(
+        `INSERT INTO formulario (titulo, descripcion, fecha_creacion, is_active) VALUES (?, ?, NOW(), ?)`,
+        [data.titulo, data.descripcion ?? null, data.is_active]
+      );
+      const formId = formResult.insertId;
+
+      let orden = 1;
+      for (const pregunta of data.preguntas) {
+        const [preguntaResult]: any = await conn.execute(
+          `INSERT INTO pregunta (texto_pregunta, es_obligatoria, id_tipo_pregunta) VALUES (?, ?, ?)`,
+          [pregunta.texto_pregunta, pregunta.es_obligatoria, pregunta.id_tipo_pregunta]
+        );
+        const preguntaId = preguntaResult.insertId;
+
+        await conn.execute(
+          `INSERT INTO formulacion_pregunta (id_formulario, id_pregunta, orden) VALUES (?, ?, ?)`,
+          [formId, preguntaId, orden]
+        );
+        orden++;
+
+        let etiquetaIdx = 0;
+        for (const opcion of pregunta.opciones) {
+          const etiqueta = opcion.etiqueta ?? String.fromCharCode(65 + etiquetaIdx);
+          await conn.execute(
+            `INSERT INTO opcion_pregunta (texto_opcion, etiqueta, id_pregunta) VALUES (?, ?, ?)`,
+            [opcion.texto_opcion, etiqueta, preguntaId]
+          );
+          etiquetaIdx++;
+        }
+      }
+
+      await conn.commit();
+
+      const [rows]: any = await conn.execute(
+        `SELECT * FROM formulario WHERE id_formulario = ?`,
+        [formId]
+      );
+      return rows[0];
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
+    }
+  }
+
+  async findTiposPregunta(): Promise<TipoPreguntaRef[]> {
+    const [rows]: any = await MysqlConnection.execute(
+      `SELECT id_tipo_pregunta, nombre FROM tipo_pregunta`
+    );
+    return rows;
+  }
+
   async update(id: number, data: Partial<Formulario>): Promise<Formulario> {
     const keys = Object.keys(data);
     if (keys.length === 0) {
@@ -81,7 +143,23 @@ export class FormularioRepositoryMySQL implements FormularioRepository {
   }
 
   async delete(id: number): Promise<void> {
-    await MysqlConnection.execute(`DELETE FROM formulario WHERE id_formulario = ?`, [id]);
+    // Fix B2: antes solo se borraba la fila de `formulario`, pero las
+    // preguntas asociadas en `formulacion_pregunta` tienen FK hacia el
+    // formulario, por lo que el DELETE truena con error de restricción.
+    // Se eliminan primero las asociaciones del pivote y luego el
+    // formulario, todo dentro de una transacción.
+    const conn = await MysqlConnection.getConnection();
+    try {
+      await conn.beginTransaction();
+      await conn.execute(`DELETE FROM formulacion_pregunta WHERE id_formulario = ?`, [id]);
+      await conn.execute(`DELETE FROM formulario WHERE id_formulario = ?`, [id]);
+      await conn.commit();
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
+    }
   }
 
   async findById(id: number): Promise<Formulario | null> {
@@ -178,6 +256,26 @@ export class FormularioRepositoryMySQL implements FormularioRepository {
   async formHasEncuestaActive(formularioId: number): Promise<boolean> {
     const [rows]: any = await MysqlConnection.execute(
       `SELECT COUNT(*) as count FROM encuesta WHERE id_formulario = ? AND is_active = true`,
+      [formularioId]
+    );
+    return rows[0].count > 0;
+  }
+
+  // Fix B2: cualquier encuesta (activa o no) implica que el formulario ya
+  // fue usado y puede tener respuestas; no debe poder eliminarse.
+  async formHasEncuesta(formularioId: number): Promise<boolean> {
+    const [rows]: any = await MysqlConnection.execute(
+      `SELECT COUNT(*) as count FROM encuesta WHERE id_formulario = ?`,
+      [formularioId]
+    );
+    return rows[0].count > 0;
+  }
+
+  // Fix B2: respuestas de egresados ligadas al formulario; si existen, borrar
+  // el formulario perdería esos datos reales.
+  async formHasRespuesta(formularioId: number): Promise<boolean> {
+    const [rows]: any = await MysqlConnection.execute(
+      `SELECT COUNT(*) as count FROM respuesta WHERE id_formulario = ?`,
       [formularioId]
     );
     return rows[0].count > 0;

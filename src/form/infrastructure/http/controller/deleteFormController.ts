@@ -13,6 +13,13 @@ export const deleteFormularioController = (deleteFormulario: DeleteFormulario) =
     await deleteFormulario.execute(id);
     res.status(204).send();
   } catch (error) {
-    handleDeleteError(error as Error, req, res, next);
+    const err = error as Error;
+    // Fix B2: si el formulario ya se usó (encuestas o respuestas), es un
+    // conflicto de estado, no un error de petición: se responde 409.
+    if (err.message.includes('ya se usó')) {
+      res.status(409).json({ error: { status: '409', title: 'Conflict', detail: err.message } });
+      return;
+    }
+    handleDeleteError(err, req, res, next);
   }
 };
