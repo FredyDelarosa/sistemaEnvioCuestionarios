@@ -1,4 +1,5 @@
 import { CreateFormulario } from '../application/usecase/CreateForm';
+import { CreateFormularioCompleto } from '../application/usecase/CreateFormularioCompleto';
 import { UpdateFormulario } from '../application/usecase/UpdateForm';
 import { DeleteFormulario } from '../application/usecase/DeleteForm';
 import { GetFormularioById, GetAllFormularios } from '../application/usecase/GetForm';
@@ -11,6 +12,7 @@ const formularioRepo = new FormularioRepositoryMySQL();
 export const dependencies = {
   formularioRepo,
   createFormulario: new CreateFormulario(formularioRepo),
+  createFormularioCompleto: new CreateFormularioCompleto(formularioRepo),
   updateFormulario: new UpdateFormulario(formularioRepo),
   deleteFormulario: new DeleteFormulario(formularioRepo),
   getFormularioById: new GetFormularioById(formularioRepo),
