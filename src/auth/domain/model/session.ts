@@ -1,6 +1,6 @@
 export type SessionRole =
   | 'egresado'
-  | 'super_admin'
+  | 'admin'
   | 'director_vinculacion'
   | 'director_programa_educativo';
 

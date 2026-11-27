@@ -2,7 +2,8 @@
 export interface AssignmentRepository {
   assignToGraduates(
     idEncuesta: number,
-    egresados: number[]
+    egresados: number[],
+    opciones?: { porGrupo?: boolean; idGrupo?: number }
   ): Promise<{ created: number; reactivated: number; skipped: number }>;
 
   deactivateAllAssignmentsForSurvey(idEncuesta: number): Promise<void>;
@@ -19,6 +20,8 @@ export interface AssignmentRepository {
   ): Promise<{ meta: any; data: any[] }>;
 
   revokeAccess(uuid: string): Promise<void>;
+
+  revokeAllForSurvey(idEncuesta: number): Promise<number>;
 
   getGroupsAssignedToSurvey(idEncuesta: number): Promise<any[]>;
 }

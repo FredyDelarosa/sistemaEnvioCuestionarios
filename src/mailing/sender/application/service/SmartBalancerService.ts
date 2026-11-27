@@ -41,7 +41,8 @@ export class SmartBalancerService {
         host: selected.host,
         port: selected.port,
         user: selected.email,
-        pass: decryptedPass
+        pass: decryptedPass,
+        fromName: selected.display_name ?? undefined
       }
     };
   }

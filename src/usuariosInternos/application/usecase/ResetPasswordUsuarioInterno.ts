@@ -1,16 +1,27 @@
 import bcrypt from 'bcrypt';
 import { IUsuariosInternosRepository } from '../../domain/port/IUsuariosInternosRepository';
+import { puedeAdministrarRol, MENSAJE_SIN_PERMISO } from '../../domain/policy/PoliticaGestionUsuarios';
 
 export interface ResetPasswordResult {
   success: boolean;
   error?: string;
+  forbidden?: boolean;
 }
 
 export class ResetPasswordUsuarioInterno {
-  constructor(private readonly repository: IUsuariosInternosRepository) {}
+  constructor(private readonly repository: IUsuariosInternosRepository) { }
 
-  async execute(id_usuario: number, new_password: string): Promise<ResetPasswordResult> {
+  async execute(
+    id_usuario: number,
+    new_password: string,
+    actorRol: string
+  ): Promise<ResetPasswordResult> {
     try {
+      const objetivo = await this.repository.getUserById(id_usuario);
+      if (objetivo && !puedeAdministrarRol(actorRol, objetivo.rol_nombre)) {
+        return { success: false, error: MENSAJE_SIN_PERMISO, forbidden: true };
+      }
+
       this.validatePassword(new_password);
 
       const password_hash = await bcrypt.hash(new_password, 10);

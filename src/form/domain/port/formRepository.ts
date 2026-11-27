@@ -1,11 +1,15 @@
 import { Formulario } from '../model/form';
 
+// B11: filtros para listar formularios
+export type BusquedaFormularios = { activo?: boolean; q?: string; page: number; limit: number };
+
 export interface FormularioRepository {
   create(data: Omit<Formulario, 'id_formulario' | 'fecha_creacion'>): Promise<Formulario>;
   update(id: number, data: Partial<Formulario>): Promise<Formulario>;
   delete(id: number): Promise<void>;
   findById(id: number): Promise<Formulario | null>;
   findAll(): Promise<Formulario[]>;
+  search(opciones: BusquedaFormularios): Promise<{ data: Formulario[]; total: number }>;
   findActiveByTitle(title: string): Promise<Formulario | null>;
 
   // Asociación con preguntas (pivot formulacion_pregunta)

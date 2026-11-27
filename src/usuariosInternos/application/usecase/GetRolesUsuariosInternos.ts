@@ -1,4 +1,5 @@
 import { IUsuariosInternosRepository } from '../../domain/port/IUsuariosInternosRepository';
+import { puedeAdministrarRol } from '../../domain/policy/PoliticaGestionUsuarios';
 
 export interface RoleItem {
   id_rol: number;
@@ -12,14 +13,14 @@ export interface GetRolesUsuariosInternosResult {
 }
 
 export class GetRolesUsuariosInternos {
-  constructor(private readonly repository: IUsuariosInternosRepository) {}
+  constructor(private readonly repository: IUsuariosInternosRepository) { }
 
-  async execute(): Promise<GetRolesUsuariosInternosResult> {
+  async execute(actorRol: string): Promise<GetRolesUsuariosInternosResult> {
     try {
       const roles = await this.repository.getRoles();
       return {
         success: true,
-        data: roles,
+        data: roles.filter((r) => puedeAdministrarRol(actorRol, r.nombre)),
       };
     } catch (error) {
       return {

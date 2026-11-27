@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { GetUsuarioInternoById } from '../../../application/usecase/GetUsuarioInternoById';
 
 export class GetUsuarioInternoByIdController {
-  constructor(private readonly getUsuarioInternoById: GetUsuarioInternoById) {}
+  constructor(private readonly getUsuarioInternoById: GetUsuarioInternoById) { }
 
   async handle(req: Request, res: Response): Promise<void> {
     try {
@@ -17,10 +17,11 @@ export class GetUsuarioInternoByIdController {
         return;
       }
 
-      const result = await this.getUsuarioInternoById.execute(id_usuario);
+      const actorRol = req.session?.user?.rol ?? '';
+      const result = await this.getUsuarioInternoById.execute(id_usuario, actorRol);
 
       if (!result.success) {
-        res.status(404).json(result);
+        res.status(result.forbidden ? 403 : 404).json({ success: false, error: result.error });
         return;
       }
 

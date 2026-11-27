@@ -6,8 +6,8 @@ import { MysqlConnection } from '../../../../core/db/mysl/connection';
 export class MysqlEmailAccountRepository extends BaseEmailAccountRepository {
   async create(account: Omit<EmailAccount, 'id_account' | 'current_usage' | 'is_active' | 'created_at'> & { password: string }): Promise<EmailAccount> {
     const password_encrypted = EncryptionHelper.encrypt(account.password);
-    const sql = `INSERT INTO sys_email_account (email, host, port, password_encrypted, daily_limit) VALUES (?, ?, ?, ?, ?)`;
-    const [result]: any = await MysqlConnection.query(sql, [account.email, account.host, account.port, password_encrypted, account.daily_limit]);
+    const sql = `INSERT INTO sys_email_account (email, display_name, host, port, password_encrypted, daily_limit) VALUES (?, ?, ?, ?, ?, ?)`;
+    const [result]: any = await MysqlConnection.query(sql, [account.email, account.display_name?.trim() || null, account.host, account.port, password_encrypted, account.daily_limit]);
     const [rows]: any = await MysqlConnection.query('SELECT * FROM sys_email_account WHERE id_account = ?', [result.insertId]);
     return this.sanitize(rows[0]);
   }
@@ -16,6 +16,7 @@ export class MysqlEmailAccountRepository extends BaseEmailAccountRepository {
     const fields: string[] = [];
     const values: any[] = [];
     if (data.email) { fields.push('email = ?'); values.push(data.email); }
+    if (data.display_name !== undefined) { fields.push('display_name = ?'); values.push(data.display_name?.trim() || null); }
     if (data.host) { fields.push('host = ?'); values.push(data.host); }
     if (data.port) { fields.push('port = ?'); values.push(data.port); }
     if (data.daily_limit) { fields.push('daily_limit = ?'); values.push(data.daily_limit); }

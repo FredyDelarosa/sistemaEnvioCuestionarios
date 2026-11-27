@@ -5,7 +5,7 @@ import { MysqlConnection } from '../../../../../core/db/mysl/connection';
 export class MysqlSenderRepository implements SenderRepository {
   async getActiveAccounts(): Promise<EmailAccount[]> {
     const [rows]: any = await MysqlConnection.query(
-      'SELECT id_account, email, host, port, password_encrypted, daily_limit, current_usage, is_active FROM sys_email_account WHERE is_active = 1'
+      'SELECT id_account, email, display_name, host, port, password_encrypted, daily_limit, current_usage, is_active FROM sys_email_account WHERE is_active = 1'
     );
     return rows as EmailAccount[];
   }

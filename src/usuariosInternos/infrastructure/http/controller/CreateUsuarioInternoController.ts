@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { CreateUsuarioInterno } from '../../../application/usecase/CreateUsuarioInterno';
 
 export class CreateUsuarioInternoController {
-  constructor(private readonly createUsuarioInterno: CreateUsuarioInterno) {}
+  constructor(private readonly createUsuarioInterno: CreateUsuarioInterno) { }
 
   async handle(req: Request, res: Response): Promise<void> {
     try {
@@ -16,15 +16,20 @@ export class CreateUsuarioInternoController {
         return;
       }
 
-      const result = await this.createUsuarioInterno.execute({
-        nombre,
-        email,
-        password,
-        id_rol,
-      });
+      const actorRol = req.session?.user?.rol ?? '';
+
+      const result = await this.createUsuarioInterno.execute(
+        {
+          nombre,
+          email,
+          password,
+          id_rol,
+        },
+        actorRol
+      );
 
       if (!result.success) {
-        res.status(400).json(result);
+        res.status(result.forbidden ? 403 : 400).json({ success: false, error: result.error });
         return;
       }
 

@@ -4,43 +4,59 @@ import { v4 as uuidv4 } from 'uuid';
 import { listParticipantsQuery } from './AssignmentRepositoryMySQL.participants';
 
 export class AssignmentRepositoryMySQL extends BaseAssignmentRepository {
-  async assignToGraduates(idEncuesta: number, egresados: number[]): Promise<{ created: number; reactivated: number; skipped: number }> {
+  async assignToGraduates(
+    idEncuesta: number,
+    egresados: number[],
+    opciones: { porGrupo?: boolean; idGrupo?: number } = {}
+  ): Promise<{ created: number; reactivated: number; skipped: number }> {
     if (!egresados.length) return { created: 0, reactivated: 0, skipped: 0 };
 
     // 1. Consultar los egresados ya asignados a la encuesta
     const [rows]: any = await MysqlConnection.query(
-      `SELECT id_egresado, is_active FROM encuesta_egresados WHERE id_encuesta = ? AND id_egresado IN (${egresados.map(() => '?').join(',')})`,
+      `SELECT id_egresado, is_active, revocado_manual FROM encuesta_egresados WHERE id_encuesta = ? AND id_egresado IN (${egresados.map(() => '?').join(',')})`,
       [idEncuesta, ...egresados]
     );
-    const yaAsignados = new Map<number, boolean>();
+    const yaAsignados = new Map<number, { activo: boolean; revocadoManual: boolean }>();
     for (const row of rows) {
-      yaAsignados.set(row.id_egresado, !!row.is_active);
+      yaAsignados.set(row.id_egresado, {
+        activo: !!row.is_active,
+        revocadoManual: !!row.revocado_manual
+      });
     }
 
     let created = 0, reactivated = 0, skipped = 0;
-    const inserts: string[] = [];
+    const inserts: number[] = [];
     const updates: number[] = [];
     for (const idEgresado of egresados) {
-      if (!yaAsignados.has(idEgresado)) {
-        inserts.push(`('${uuidv4()}', 1, ${idEncuesta}, ${idEgresado})`);
+      const actual = yaAsignados.get(idEgresado);
+      if (!actual) {
+        inserts.push(idEgresado);
         created++;
-      } else if (!yaAsignados.get(idEgresado)) {
+      } else if (actual.activo) {
+        skipped++;
+      } else if (actual.revocadoManual && opciones.porGrupo) {
+        // Lo quitó un administrador a mano: al asignar por grupo no vuelve
+        skipped++;
+      } else {
         updates.push(idEgresado);
         reactivated++;
-      } else {
-        skipped++;
       }
     }
 
     // 2. Insertar nuevos
     if (inserts.length) {
-      const sql = `INSERT INTO encuesta_egresados (id_encuesta_egresados, is_active, id_encuesta, id_egresado) VALUES ${inserts.join(', ')}`;
-      await MysqlConnection.query(sql);
+      const placeholders = inserts.map(() => '(?, 1, ?, ?, ?)').join(', ');
+      const params: Array<string | number | null> = [];
+      for (const idEgresado of inserts) {
+        params.push(uuidv4(), idEncuesta, idEgresado, opciones.idGrupo ?? null);
+      }
+      const sql = `INSERT INTO encuesta_egresados (id_encuesta_egresados, is_active, id_encuesta, id_egresado, id_grupo) VALUES ${placeholders}`;
+      await MysqlConnection.query(sql, params);
     }
-    // 3. Reactivar los revocados
+    // 3. Reactivar los revocados (y quitarles la marca de "quitado a mano")
     if (updates.length) {
-      const sql = `UPDATE encuesta_egresados SET is_active = 1 WHERE id_encuesta = ? AND id_egresado IN (${updates.map(() => '?').join(',')})`;
-      await MysqlConnection.query(sql, [idEncuesta, ...updates]);
+      const sql = `UPDATE encuesta_egresados SET is_active = 1, revocado_manual = 0, id_grupo = ? WHERE id_encuesta = ? AND id_egresado IN (${updates.map(() => '?').join(',')})`;
+      await MysqlConnection.query(sql, [opciones.idGrupo ?? null, idEncuesta, ...updates]);
     }
 
     return { created, reactivated, skipped };
@@ -58,7 +74,22 @@ export class AssignmentRepositoryMySQL extends BaseAssignmentRepository {
   }
 
   async revokeAccess(uuid: string): Promise<void> {
-    await MysqlConnection.query('UPDATE encuesta_egresados SET is_active = 0 WHERE id_encuesta_egresados = ?', [uuid]);
+    await MysqlConnection.query(
+      'UPDATE encuesta_egresados SET is_active = 0, revocado_manual = 1 WHERE id_encuesta_egresados = ?',
+      [uuid]
+    );
+  }
+
+  async revokeAllForSurvey(idEncuesta: number): Promise<number> {
+    const [rows]: [any[], any] = await MysqlConnection.query(
+      'SELECT COUNT(*) AS total FROM encuesta_egresados WHERE id_encuesta = ? AND is_active = 1',
+      [idEncuesta]
+    );
+    await MysqlConnection.query(
+      'UPDATE encuesta_egresados SET is_active = 0, revocado_manual = 1 WHERE id_encuesta = ?',
+      [idEncuesta]
+    );
+    return Number(rows[0]?.total ?? 0);
   }
 
   async getGroupsAssignedToSurvey(idEncuesta: number): Promise<any[]> {
@@ -66,15 +97,13 @@ export class AssignmentRepositoryMySQL extends BaseAssignmentRepository {
       SELECT DISTINCT
         ge.id_grupo,
         ge.nombre,
-        COUNT(DISTINCT gm.id_egresado) as cantidad_participantes,
+        COUNT(DISTINCT ee.id_egresado) as cantidad_participantes,
         SUM(CASE WHEN r.id_respuesta IS NOT NULL THEN 1 ELSE 0 END) as contestadas,
         SUM(CASE WHEN r.id_respuesta IS NULL THEN 1 ELSE 0 END) as pendientes
       FROM encuesta_egresados ee
-      INNER JOIN egresado e ON ee.id_egresado = e.id_egresado
-      INNER JOIN grupo_miembro gm ON e.id_egresado = gm.id_egresado
-      INNER JOIN grupo_egresado ge ON gm.id_grupo = ge.id_grupo
+      INNER JOIN grupo_egresado ge ON ge.id_grupo = ee.id_grupo
       INNER JOIN encuesta ON encuesta.id_encuesta = ee.id_encuesta
-      LEFT JOIN respuesta r ON (r.id_egresado = e.id_egresado AND r.id_formulario = encuesta.id_formulario)
+      LEFT JOIN respuesta r ON (r.id_egresado = ee.id_egresado AND r.id_formulario = encuesta.id_formulario)
       WHERE ee.id_encuesta = ? AND ee.is_active = 1
       GROUP BY ge.id_grupo, ge.nombre
       ORDER BY ge.nombre ASC

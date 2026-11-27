@@ -422,7 +422,7 @@ router.patch(
 router.patch(
 	'/admin/:id/perfil-completo',
 	requireAuth,
-	requireRoles(['super_admin', 'director_vinculacion']),
+	requireRoles(['admin', 'director_vinculacion']),
 	multerConfig.single('file'),
 	updatePerfilCompletoAdminController(dependencies.updatePerfilCompletoAdmin, dependencies.uploadFile)
 );
@@ -500,7 +500,7 @@ router.patch(
 router.patch(
 	'/:id/estado',
 	requireAuth,
-	requireRoles(['super_admin', 'director_vinculacion', 'director_programa_educativo']),
+	requireRoles(['admin', 'director_vinculacion', 'director_programa_educativo']),
 	requireProgramScopeOnEgresadoParam('id'),
 	updateEstadoEgresadoController(dependencies.updateEstadoEgresado)
 );
@@ -788,7 +788,7 @@ router.get('/cohortes', getCohortesDisponiblesController(dependencies.getCohorte
  */
 const syncEgresados = syncEgresadosController(dependencies.syncEgresadosFromPlatinum);
 
-router.post('/sync', requireAuth, requireRoles(['super_admin', 'director_vinculacion']), syncEgresados);
+router.post('/sync', requireAuth, requireRoles(['admin', 'director_vinculacion']), syncEgresados);
 
 /**
  * @openapi
@@ -880,7 +880,7 @@ router.post('/sync', requireAuth, requireRoles(['super_admin', 'director_vincula
  */
 const actualizarPeriodos = actualizarPeriodosController(dependencies.actualizarPeriodosEgresados);
 
-router.post('/actualizar-periodos', requireAuth, requireRoles(['super_admin', 'director_vinculacion']), actualizarPeriodos);
+router.post('/actualizar-periodos', requireAuth, requireRoles(['admin', 'director_vinculacion']), actualizarPeriodos);
 
 /**
  * @openapi
@@ -997,7 +997,7 @@ const getEgresadoWithAchievements = getEgresadoWithAchievementsController(depend
 router.get(
 	'/:id/perfil-completo',
 	requireAuth,
-	requireSelfOrRoles('id', ['super_admin', 'director_vinculacion', 'director_programa_educativo']),
+	requireSelfOrRoles('id', ['admin', 'director_vinculacion', 'director_programa_educativo']),
 	requireProgramScopeOnEgresadoParam('id'),
 	getEgresadoWithAchievements
 );
@@ -1103,7 +1103,7 @@ const getAllEgresadosWithAchievements = getAllEgresadosWithAchievementsControlle
 router.get(
 	'/perfiles-completos',
 	requireAuth,
-	requireRoles(['super_admin', 'director_vinculacion', 'director_programa_educativo']),
+	requireRoles(['admin', 'director_vinculacion', 'director_programa_educativo']),
 	getAllEgresadosWithAchievements
 );
 

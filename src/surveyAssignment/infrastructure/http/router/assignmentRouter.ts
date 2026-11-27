@@ -3,6 +3,7 @@ import { assignSurveyController } from '../controller/assignSurveyController';
 import { assignSurveyGroupController } from '../controller/assignSurveyGroupController';
 import { listSurveyParticipantsController } from '../controller/listSurveyParticipantsController';
 import { revokeSurveyAccessController } from '../controller/revokeSurveyAccessController';
+import { revokeAllSurveyAccessController } from '../controller/revokeAllSurveyAccessController';
 import { getGroupsAssignedController } from '../controller/getGroupsAssignedController';
 import { assignmentDependencies } from '../../dependencies';
 
@@ -12,5 +13,6 @@ assignmentRouter.post('/asignar/grupo', assignSurveyGroupController(assignmentDe
 assignmentRouter.get('/participantes', listSurveyParticipantsController(assignmentDependencies.listSurveyParticipants));
 assignmentRouter.get('/grupos', getGroupsAssignedController(assignmentDependencies.getGroupsAssignedToSurvey));
 assignmentRouter.delete('/participantes/:uuid', revokeSurveyAccessController(assignmentDependencies.revokeSurveyAccess));
+assignmentRouter.delete('/participantes', revokeAllSurveyAccessController(assignmentDependencies.revokeAllSurveyAccess));
 
 export default assignmentRouter;

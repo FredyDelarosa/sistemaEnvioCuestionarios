@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { DeactivateUsuarioInterno } from '../../../application/usecase/DeactivateUsuarioInterno';
 
 export class DeactivateUsuarioInternoController {
-  constructor(private readonly deactivateUsuarioInterno: DeactivateUsuarioInterno) {}
+  constructor(private readonly deactivateUsuarioInterno: DeactivateUsuarioInterno) { }
 
   async handle(req: Request, res: Response): Promise<void> {
     try {
@@ -17,10 +17,11 @@ export class DeactivateUsuarioInternoController {
         return;
       }
 
-      const result = await this.deactivateUsuarioInterno.execute(id_usuario);
+      const actorRol = req.session?.user?.rol ?? '';
+      const result = await this.deactivateUsuarioInterno.execute(id_usuario, actorRol);
 
       if (!result.success) {
-        res.status(400).json(result);
+        res.status(result.forbidden ? 403 : 400).json({ success: false, error: result.error });
         return;
       }
 

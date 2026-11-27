@@ -309,11 +309,16 @@ CREATE TABLE `encuesta_egresados` (
   `is_active` tinyint(1) DEFAULT '1',
   `id_encuesta` int DEFAULT NULL,
   `id_egresado` int DEFAULT NULL,
+  `revocado_manual` tinyint(1) NOT NULL DEFAULT '0',
+  `id_grupo` int DEFAULT NULL,
   PRIMARY KEY (`id_encuesta_egresados`) /*T![clustered_index] CLUSTERED */,
   KEY `fk_1` (`id_encuesta`),
   KEY `fk_2` (`id_egresado`),
+  UNIQUE KEY `uq_encuesta_egresado` (`id_encuesta`,`id_egresado`),
+  KEY `fk_encuesta_egresados_grupo` (`id_grupo`),
   CONSTRAINT `fk_1` FOREIGN KEY (`id_encuesta`) REFERENCES `encuesta` (`id_encuesta`),
-  CONSTRAINT `fk_2` FOREIGN KEY (`id_egresado`) REFERENCES `egresado` (`id_egresado`)
+  CONSTRAINT `fk_2` FOREIGN KEY (`id_egresado`) REFERENCES `egresado` (`id_egresado`),
+  CONSTRAINT `fk_encuesta_egresados_grupo` FOREIGN KEY (`id_grupo`) REFERENCES `grupo_egresado` (`id_grupo`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -638,6 +643,7 @@ DROP TABLE IF EXISTS `sys_email_account`;
 CREATE TABLE `sys_email_account` (
   `id_account` int NOT NULL AUTO_INCREMENT,
   `email` varchar(150) NOT NULL,
+  `display_name` varchar(150) DEFAULT NULL,
   `host` varchar(100) DEFAULT 'smtp.gmail.com',
   `port` int DEFAULT '587',
   `password_encrypted` varchar(255) NOT NULL,

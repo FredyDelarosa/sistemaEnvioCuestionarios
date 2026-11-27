@@ -1,16 +1,18 @@
 import { IUsuariosInternosRepository } from '../../domain/port/IUsuariosInternosRepository';
 import { InternalUser } from '../../domain/model/InternalUser';
+import { puedeAdministrarRol, MENSAJE_SIN_PERMISO } from '../../domain/policy/PoliticaGestionUsuarios';
 
 export interface GetUsuarioInternoByIdResult {
   success: boolean;
   data?: InternalUser;
   error?: string;
+  forbidden?: boolean;
 }
 
 export class GetUsuarioInternoById {
-  constructor(private readonly repository: IUsuariosInternosRepository) {}
+  constructor(private readonly repository: IUsuariosInternosRepository) { }
 
-  async execute(id_usuario: number): Promise<GetUsuarioInternoByIdResult> {
+  async execute(id_usuario: number, actorRol: string): Promise<GetUsuarioInternoByIdResult> {
     try {
       const usuario = await this.repository.getUserById(id_usuario);
 
@@ -19,6 +21,10 @@ export class GetUsuarioInternoById {
           success: false,
           error: 'Usuario no encontrado',
         };
+      }
+
+      if (!puedeAdministrarRol(actorRol, usuario.rol_nombre)) {
+        return { success: false, error: MENSAJE_SIN_PERMISO, forbidden: true };
       }
 
       return {

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { UpdateUsuarioInterno } from '../../../application/usecase/UpdateUsuarioInterno';
 
 export class UpdateUsuarioInternoController {
-  constructor(private readonly updateUsuarioInterno: UpdateUsuarioInterno) {}
+  constructor(private readonly updateUsuarioInterno: UpdateUsuarioInterno) { }
 
   async handle(req: Request, res: Response): Promise<void> {
     try {
@@ -27,15 +27,21 @@ export class UpdateUsuarioInternoController {
         return;
       }
 
-      const result = await this.updateUsuarioInterno.execute(id_usuario, {
-        nombre,
-        email,
-        id_rol,
-        is_active,
-      });
+      const actorRol = req.session?.user?.rol ?? '';
+
+      const result = await this.updateUsuarioInterno.execute(
+        id_usuario,
+        {
+          nombre,
+          email,
+          id_rol,
+          is_active,
+        },
+        actorRol
+      );
 
       if (!result.success) {
-        res.status(400).json(result);
+        res.status(result.forbidden ? 403 : 400).json({ success: false, error: result.error });
         return;
       }
 
