@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { dependencies } from '../../dependencies';
 import { createFormularioController } from '../controller/createFormController';
+import { createFormularioCompletoController } from '../controller/createFormularioCompletoController';
 import { getFormulariosController } from '../controller/getFormController';
 import { updateFormularioController } from '../controller/updateFormController';
 import { deleteFormularioController } from '../controller/deleteFormController';
@@ -39,6 +40,9 @@ router.get('/api/formulario/:id/preguntas', getQuestionsWithOptionsController);
  *               $ref: '#/components/schemas/FormularioResource'
  */
 const createFormulario = createFormularioController(dependencies.createFormulario);
+
+// Fix B1: endpoint que crea el formulario completo en una sola transacción
+const createFormularioCompleto = createFormularioCompletoController(dependencies.createFormularioCompleto);
 
 /**
  * @openapi
@@ -173,6 +177,7 @@ const addPregunta = addPreguntaController(dependencies.addQuestionToFormulario);
 const removePregunta = removePreguntaController(dependencies.removeQuestionFromFormulario);
 
 
+router.post('/completo', createFormularioCompleto);
 router.post('/', createFormulario);
 router.get('/', getFormularios);
 

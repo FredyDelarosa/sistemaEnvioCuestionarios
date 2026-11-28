@@ -22,12 +22,10 @@ export class AddQuestionToFormulario {
     const duplicateOrder = await this.repo.hasDuplicateOrder(formularioId, orden);
     if (duplicateOrder) throw new Error('Ya existe una pregunta con el mismo orden en este formulario');
 
-    const maxOrder = await this.repo.getMaxOrder(formularioId);
-    const expected = (maxOrder ?? 0) + 1;
-    if (orden !== expected) {
-      throw new Error(`El orden debe ser consecutivo. El siguiente orden disponible es ${expected}`);
-    }
-
+    // Fix B1: no se exige que el orden sea estrictamente consecutivo.
+    // Antes, un hueco en la secuencia (p. ej. una pregunta omitida en el
+    // guardado) hacía que todo el guardado del formulario truene con 400.
+    // Basta con que el orden sea un entero positivo y no esté duplicado.
     await this.repo.addQuestion(formularioId, preguntaId, orden);
   }
 }
