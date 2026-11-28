@@ -144,7 +144,23 @@ export class FormularioRepositoryMySQL implements FormularioRepository {
   }
 
   async delete(id: number): Promise<void> {
-    await MysqlConnection.execute(`DELETE FROM formulario WHERE id_formulario = ?`, [id]);
+    // Fix B2: antes solo se borraba la fila de `formulario`, pero las
+    // preguntas asociadas en `formulacion_pregunta` tienen FK hacia el
+    // formulario, por lo que el DELETE truena con error de restricción.
+    // Se eliminan primero las asociaciones del pivote y luego el
+    // formulario, todo dentro de una transacción.
+    const conn = await MysqlConnection.getConnection();
+    try {
+      await conn.beginTransaction();
+      await conn.execute(`DELETE FROM formulacion_pregunta WHERE id_formulario = ?`, [id]);
+      await conn.execute(`DELETE FROM formulario WHERE id_formulario = ?`, [id]);
+      await conn.commit();
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
+    }
   }
 
   async findById(id: number): Promise<Formulario | null> {
@@ -246,6 +262,26 @@ export class FormularioRepositoryMySQL implements FormularioRepository {
   async formHasEncuestaActive(formularioId: number): Promise<boolean> {
     const [rows]: any = await MysqlConnection.execute(
       `SELECT COUNT(*) as count FROM encuesta WHERE id_formulario = ? AND is_active = true`,
+      [formularioId]
+    );
+    return rows[0].count > 0;
+  }
+
+  // Fix B2: cualquier encuesta (activa o no) implica que el formulario ya
+  // fue usado y puede tener respuestas; no debe poder eliminarse.
+  async formHasEncuesta(formularioId: number): Promise<boolean> {
+    const [rows]: any = await MysqlConnection.execute(
+      `SELECT COUNT(*) as count FROM encuesta WHERE id_formulario = ?`,
+      [formularioId]
+    );
+    return rows[0].count > 0;
+  }
+
+  // Fix B2: respuestas de egresados ligadas al formulario; si existen, borrar
+  // el formulario perdería esos datos reales.
+  async formHasRespuesta(formularioId: number): Promise<boolean> {
+    const [rows]: any = await MysqlConnection.execute(
+      `SELECT COUNT(*) as count FROM respuesta WHERE id_formulario = ?`,
       [formularioId]
     );
     return rows[0].count > 0;
